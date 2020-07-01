@@ -4,8 +4,8 @@ public with sharing class APIGateway {
 
 	private final String ALGORITHM = 'AWS4-HMAC-SHA256';
 	private final String SERVICE = 'execute-api';
-	private final String CONTENT_TYPE = 'application/x-www-form-urlencoded';
 
+    private String content_type;
 	private String baseUrl;
 	private String region;
 
@@ -26,10 +26,13 @@ public with sharing class APIGateway {
 	* Parameters: 
 	*   baseUrl => The base URL for your API
 	*   region => The AWS region for your API
+	* 	content_type => The message CONTENT_TYPE 
+	*                   eg. 'application/json' or 'application/x-www-form-urlencoded'
 	*/
-	public APIGateway(String baseUrl, String region) {
+	public APIGateway(String baseUrl, String region, String content_type) {
 		this.baseUrl = baseUrl;
 		this.region = region;
+		this.content_type = content_type;
 		this.host = this.baseUrl.substring(8);
 
 		AWS_Configuration__c awsConfig = AWS_Configuration__c.getOrgDefaults();
@@ -48,7 +51,7 @@ public with sharing class APIGateway {
 	public HttpResponse sendRequest(String functionName, String method, String content, String stage) {
 		this.requestPath = '/' + stage + '/' + functionName;
 		this.method = method;
-		this.content = content;
+        this.content = EncodingUtil.urlEncode(content, 'UTF-8');
 		
 		HttpRequest req = this.getRequest();
 		Http http = new Http();
@@ -68,7 +71,7 @@ public with sharing class APIGateway {
 		HttpRequest req = new HttpRequest();
 		req.setEndpoint(url);
 		req.setMethod(this.method);
-		req.setHeader('Content-Type', this.CONTENT_TYPE);
+		req.setHeader('Content-Type', this.content_type);
 		req.setHeader('Host', this.host);
 		req.setHeader('X-Amz-Date', this.timestamp);
 		req.setHeader('Authorization', this.getAuthHeader());
@@ -154,9 +157,9 @@ public with sharing class APIGateway {
 	* Generate the canonical request needed for the list bucket operation.
 	*/
 	private String getCanonicalRequest() {
-		String canonicalRequest = 'POST\n' + 
+		String canonicalRequest = this.method + '\n' + 
 				this.requestPath + '\n\n' + 
-				'content-type:' + this.CONTENT_TYPE + '\n' + 
+				'content-type:' + this.content_type + '\n' + 
 				'host:' + this.host + '\n' + 
 				'x-amz-date:' + this.timestamp + '\n\n' + 
 				'content-type;host;x-amz-date\n' + 

@@ -5,7 +5,8 @@ private class APIGateway_Test {
 
 		String baseUrl = 'https://testendpoint.com';
 		String region = 'us-east-1';
-		APIGateway gateway = new APIGateway(baseUrl, region);
+		String content_type = 'application/json';
+		APIGateway gateway = new APIGateway(baseUrl, region, content_type);
 
 		Test.startTest();
 			HttpResponse resp = gateway.sendRequest('HelloWorld', 'POST', 'content', 'prod');			
